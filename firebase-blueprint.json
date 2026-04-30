@@ -2,95 +2,79 @@
   "entities": {
     "Customer": {
       "title": "Customer",
-      "description": "B2B Customer Profile",
+      "description": "B2B Customer details and relationship status",
       "type": "object",
       "properties": {
-        "companyName": { "type": "string" },
-        "phone": { "type": "string" },
-        "address": { "type": "string" },
+        "companyName": { "type": "string", "description": "Name of the customer company" },
+        "ownerId": { "type": "string", "description": "UID of the sales agent owning this account" },
+        "status": { "type": "string", "enum": ["Deal", "Negosiasi", "Menolak"] },
+        "relationshipScore": { "type": "number", "description": "Points reflecting relationship depth" },
+        "rsLevel": { "type": "string", "enum": ["Cold", "Warm", "Engaged", "Trusted", "Loyal"] },
+        "probability": { "type": "number", "description": "Probability of deal closing (%)" },
         "revenue": { "type": "number" },
         "industry": { "type": "string" },
-        "relationshipScore": { "type": "number" },
-        "rsLevel": { "type": "string", "enum": ["Cold", "Warm", "Engaged", "Trusted", "Loyal"] },
-        "lastActivityDate": { "type": "object", "description": "Firestore Timestamp" },
-        "status": { "type": "string", "enum": ["Deal", "Negosiasi", "Menolak"] },
-        "probability": { "type": "number", "description": "Probability closing percentage" },
-        "pic1": { "$ref": "#/entities/PIC" },
-        "pic2": { "$ref": "#/entities/PIC" },
-        "ownerId": { "type": "string" },
         "createdAt": { "type": "string", "format": "date-time" },
-        "updatedAt": { "type": "string", "format": "date-time" },
-        "lastVisitedAt": { "type": "string", "format": "date-time" }
+        "updatedAt": { "type": "string", "format": "date-time" }
       },
-      "required": ["companyName", "ownerId", "status"]
-    },
-    "PIC": {
-      "title": "PIC",
-      "description": "Person in Charge contact details",
-      "type": "object",
-      "properties": {
-        "name": { "type": "string" },
-        "position": { "type": "string" },
-        "phone": { "type": "string" },
-        "email": { "type": "string" },
-        "birthday": { "type": "string" }
-      }
+      "required": ["companyName", "ownerId", "status", "relationshipScore", "rsLevel", "probability", "createdAt", "updatedAt"]
     },
     "Activity": {
       "title": "Activity",
-      "description": "Visit or Gift activity history",
+      "description": "Interactions logged with customers",
       "type": "object",
       "properties": {
         "customerId": { "type": "string" },
-        "type": { "type": "string", "enum": ["visit", "gift"] },
+        "type": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
-        "actorName": { "type": "string" },
-        "notes": { "type": "string" },
+        "ownerId": { "type": "string" },
         "points": { "type": "number" },
-        "ownerId": { "type": "string" }
+        "notes": { "type": "string" }
       },
-      "required": ["customerId", "type", "date", "ownerId"]
+      "required": ["customerId", "type", "date", "ownerId", "points"]
     },
     "Schedule": {
       "title": "Schedule",
-      "description": "Planned visit schedule",
+      "description": "Planned future meetings or visits",
       "type": "object",
       "properties": {
         "customerId": { "type": "string" },
+        "type": { "type": "string" },
         "date": { "type": "string", "format": "date-time" },
         "notes": { "type": "string" },
-        "status": { "type": "string", "enum": ["pending", "completed"] },
-        "ownerId": { "type": "string" }
+        "ownerId": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] }
       },
-      "required": ["customerId", "date", "ownerId"]
+      "required": ["customerId", "type", "date", "ownerId", "status"]
     },
     "UserProfile": {
       "title": "User Profile",
-      "description": "System user information",
+      "description": "User account information",
       "type": "object",
       "properties": {
+        "id": { "type": "string" },
         "email": { "type": "string" },
-        "role": { "type": "string", "enum": ["admin", "sales"] },
-        "name": { "type": "string" }
-      }
+        "name": { "type": "string" },
+        "role": { "type": "string", "enum": ["sales", "admin"] }
+      },
+      "required": ["id", "email", "name", "role"]
     }
   },
   "firestore": {
     "/customers/{customerId}": {
       "schema": "Customer",
-      "description": "Main customer records"
+      "description": "Sales accounts"
     },
     "/activities/{activityId}": {
       "schema": "Activity",
-      "description": "History of visits and gifts"
+      "description": "Log of interactions"
     },
     "/schedules/{scheduleId}": {
       "schema": "Schedule",
-      "description": "Planned visits"
+      "description": "Future appointments"
     },
     "/users/{userId}": {
       "schema": "UserProfile",
-      "description": "User roles and profile"
+      "description": "User profiles and roles"
     }
   }
 }
