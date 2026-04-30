@@ -1,0 +1,96 @@
+{
+  "entities": {
+    "Customer": {
+      "title": "Customer",
+      "description": "B2B Customer Profile",
+      "type": "object",
+      "properties": {
+        "companyName": { "type": "string" },
+        "phone": { "type": "string" },
+        "address": { "type": "string" },
+        "revenue": { "type": "number" },
+        "industry": { "type": "string" },
+        "relationshipScore": { "type": "number" },
+        "rsLevel": { "type": "string", "enum": ["Cold", "Warm", "Engaged", "Trusted", "Loyal"] },
+        "lastActivityDate": { "type": "object", "description": "Firestore Timestamp" },
+        "status": { "type": "string", "enum": ["Deal", "Negosiasi", "Menolak"] },
+        "probability": { "type": "number", "description": "Probability closing percentage" },
+        "pic1": { "$ref": "#/entities/PIC" },
+        "pic2": { "$ref": "#/entities/PIC" },
+        "ownerId": { "type": "string" },
+        "createdAt": { "type": "string", "format": "date-time" },
+        "updatedAt": { "type": "string", "format": "date-time" },
+        "lastVisitedAt": { "type": "string", "format": "date-time" }
+      },
+      "required": ["companyName", "ownerId", "status"]
+    },
+    "PIC": {
+      "title": "PIC",
+      "description": "Person in Charge contact details",
+      "type": "object",
+      "properties": {
+        "name": { "type": "string" },
+        "position": { "type": "string" },
+        "phone": { "type": "string" },
+        "email": { "type": "string" },
+        "birthday": { "type": "string" }
+      }
+    },
+    "Activity": {
+      "title": "Activity",
+      "description": "Visit or Gift activity history",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "type": { "type": "string", "enum": ["visit", "gift"] },
+        "date": { "type": "string", "format": "date-time" },
+        "actorName": { "type": "string" },
+        "notes": { "type": "string" },
+        "points": { "type": "number" },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["customerId", "type", "date", "ownerId"]
+    },
+    "Schedule": {
+      "title": "Schedule",
+      "description": "Planned visit schedule",
+      "type": "object",
+      "properties": {
+        "customerId": { "type": "string" },
+        "date": { "type": "string", "format": "date-time" },
+        "notes": { "type": "string" },
+        "status": { "type": "string", "enum": ["pending", "completed"] },
+        "ownerId": { "type": "string" }
+      },
+      "required": ["customerId", "date", "ownerId"]
+    },
+    "UserProfile": {
+      "title": "User Profile",
+      "description": "System user information",
+      "type": "object",
+      "properties": {
+        "email": { "type": "string" },
+        "role": { "type": "string", "enum": ["admin", "sales"] },
+        "name": { "type": "string" }
+      }
+    }
+  },
+  "firestore": {
+    "/customers/{customerId}": {
+      "schema": "Customer",
+      "description": "Main customer records"
+    },
+    "/activities/{activityId}": {
+      "schema": "Activity",
+      "description": "History of visits and gifts"
+    },
+    "/schedules/{scheduleId}": {
+      "schema": "Schedule",
+      "description": "Planned visits"
+    },
+    "/users/{userId}": {
+      "schema": "UserProfile",
+      "description": "User roles and profile"
+    }
+  }
+}

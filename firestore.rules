@@ -1,0 +1,107 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Default deny
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isEmailVerified() {
+      return request.auth.token.email_verified == true;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isAdmin() {
+      return isSignedIn() && (getUserData().role == 'admin' || request.auth.token.email == 'upanblogxxx@gmail.com');
+    }
+
+    function isOwner(data) {
+      return isSignedIn() && data.ownerId == request.auth.uid;
+    }
+
+    function isValidId(id) {
+      return id is string && id.size() <= 128 && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    // --- Customers ---
+    match /customers/{customerId} {
+      function isValidCustomer(data) {
+        return data.companyName is string && data.companyName.size() <= 200
+          && data.ownerId == request.auth.uid
+          && data.status in ['Deal', 'Negosiasi', 'Menolak']
+          && data.relationshipScore is number
+          && data.rsLevel in ['Cold', 'Warm', 'Engaged', 'Trusted', 'Loyal']
+          && data.probability is number
+          && data.createdAt is timestamp
+          && data.updatedAt is timestamp;
+      }
+
+      allow read: if isAdmin() || isOwner(resource.data);
+      allow create: if isSignedIn() && isValidCustomer(request.resource.data);
+      allow update: if (isAdmin() || isOwner(resource.data)) 
+        && isValidCustomer(request.resource.data)
+        && request.resource.data.ownerId == resource.data.ownerId; // owner immutable
+      allow delete: if isAdmin();
+    }
+
+    // --- Activities ---
+    match /activities/{activityId} {
+      function isValidActivity(data) {
+        let requiredFields = ['customerId', 'type', 'date', 'ownerId', 'points'];
+        let validTypes = [
+          'chat_telpon', 'meeting',
+          'joy_wish', 'non_sales_fu',
+          'consultation_solusi', 'gift',
+          'deal_first', 'repeat_order', 'long_term', 'referral',
+          'no_response_14', 'no_response_30', 'failed_deal', 'complaint'
+        ];
+        return data.keys().hasAll(requiredFields)
+          && isValidId(data.customerId)
+          && data.type in validTypes
+          && data.date is timestamp
+          && data.ownerId == request.auth.uid
+          && data.points is number;
+      }
+
+      allow read: if isAdmin() || isOwner(resource.data);
+      allow create: if isSignedIn() && isValidActivity(request.resource.data);
+      allow delete: if isAdmin();
+    }
+
+    // --- Schedules ---
+    match /schedules/{scheduleId} {
+      function isValidSchedule(data) {
+        let validTypes = [
+          'chat_telpon', 'meeting',
+          'joy_wish', 'non_sales_fu',
+          'consultation_solusi', 'gift',
+          'deal_first', 'repeat_order', 'long_term', 'referral',
+          'no_response_14', 'no_response_30', 'failed_deal', 'complaint'
+        ];
+        return data.keys().hasAll(['customerId', 'type', 'date', 'ownerId', 'status'])
+          && data.type in validTypes
+          && data.ownerId == request.auth.uid;
+      }
+      allow read: if isAdmin() || isOwner(resource.data);
+      allow create: if isSignedIn() && isValidSchedule(request.resource.data);
+      allow update: if (isAdmin() || isOwner(resource.data)) && isValidSchedule(request.resource.data) && request.resource.data.ownerId == resource.data.ownerId;
+      allow delete: if isAdmin() || isOwner(resource.data);
+    }
+
+    // --- Users ---
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isSignedIn() && request.auth.uid == userId; // Users manage their own profile basic info
+      // role should be immutable or set by admin
+      allow update: if isSignedIn() && request.auth.uid == userId 
+        && (request.resource.data.role == resource.data.role || isAdmin());
+    }
+  }
+}
