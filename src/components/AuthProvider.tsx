@@ -3,6 +3,7 @@ import { onAuthStateChanged, User, signInWithPopup, GoogleAuthProvider, signOut 
 import { doc, getDoc, setDoc } from 'firebase/firestore';
 import { auth, db, testConnection } from '../lib/firebase';
 import { UserProfile, UserRole } from '../types';
+import { toast } from 'sonner';
 
 interface AuthContextType {
   user: User | null;
@@ -47,8 +48,26 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   }, []);
 
   const signIn = async () => {
-    const provider = new GoogleAuthProvider();
-    await signInWithPopup(auth, provider);
+    try {
+      const provider = new GoogleAuthProvider();
+      // Set parameters for better UX in iframes if needed
+      provider.setCustomParameters({
+        prompt: 'select_account'
+      });
+      await signInWithPopup(auth, provider);
+      toast.success('Signed in successfully');
+    } catch (error: any) {
+      console.error('Sign in error:', error);
+      if (error.code === 'auth/operation-not-allowed') {
+        toast.error('Google Sign-in is not enabled in Firebase Console');
+      } else if (error.code === 'auth/popup-blocked') {
+        toast.error('Popup blocked. Please allow popups for this site');
+      } else if (error.code === 'auth/unauthorized-domain') {
+          toast.error('Domain not authorized in Firebase Console');
+      } else {
+        toast.error('Failed to sign in: ' + error.message);
+      }
+    }
   };
 
   const logout = async () => {
